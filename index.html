@@ -1,1 +1,237 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نموذج اختبار - Google Sheets PoC</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .location-info {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 نموذج اختبار Google Sheets</h1>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="name">الاسم:</label>
+                <input type="text" id="name" required placeholder="أدخل اسمك">
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">رقم الهاتف:</label>
+                <input type="tel" id="phone" required placeholder="01xxxxxxxxx">
+            </div>
+            
+            <div class="form-group">
+                <label>الموقع الجغرافي:</label>
+                <button type="button" id="getLocationBtn" onclick="getLocation()">📍 جلب موقعي الحالي</button>
+                <div id="locationInfo" class="location-info" style="display:none;"></div>
+            </div>
+            
+            <button type="submit" id="submitBtn" disabled>إرسال البيانات</button>
+        </form>
+        
+        <div id="statusMessage" class="status"></div>
+    </div>
 
+    <script>
+        // ============================================
+        // ⚠️ مهم: ضع رابط الـ Web App هنا بعد إنشائه
+        // ============================================
+        const GOOGLE_SCRIPT_URL = 'PUT_YOUR_WEB_APP_URL_HERE';
+        
+        let locationData = null;
+
+        // جلب الموقع الجغرافي
+        function getLocation() {
+            const locationInfo = document.getElementById('locationInfo');
+            const getLocationBtn = document.getElementById('getLocationBtn');
+            
+            if (!navigator.geolocation) {
+                showStatus('المتصفح لا يدعم تحديد الموقع', 'error');
+                return;
+            }
+
+            getLocationBtn.textContent = '⏳ جاري تحديد الموقع...';
+            getLocationBtn.disabled = true;
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    locationData = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    
+                    locationInfo.innerHTML = `
+                        ✅ تم تحديد الموقع بنجاح<br>
+                        خط العرض: ${locationData.latitude.toFixed(6)}<br>
+                        خط الطول: ${locationData.longitude.toFixed(6)}<br>
+                        الدقة: ${locationData.accuracy.toFixed(2)} متر
+                    `;
+                    locationInfo.style.display = 'block';
+                    
+                    getLocationBtn.textContent = '✅ تم تحديد الموقع';
+                    document.getElementById('submitBtn').disabled = false;
+                },
+                (error) => {
+                    let errorMsg = 'حدث خطأ في تحديد الموقع';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = '❌ رفضت إذن تحديد الموقع';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = '❌ معلومات الموقع غير متاحة';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = '❌ انتهت مهلة الطلب';
+                            break;
+                    }
+                    showStatus(errorMsg, 'error');
+                    getLocationBtn.textContent = '📍 جلب موقعي الحالي';
+                    getLocationBtn.disabled = false;
+                }
+            );
+        }
+
+        // إرسال البيانات إلى Google Sheets
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ جاري الإرسال...';
+
+            const data = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
+                accuracy: locationData.accuracy,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // مهم لتجاوز مشكلة CORS
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                // مع mode: 'no-cors' لن نتمكن من قراءة الـ response
+                // لكن إذا وصلنا لهنا فالطلب نجح
+                showStatus('✅ تم إرسال البيانات بنجاح! تحقق من Google Sheets', 'success');
+                
+                // إعادة تعيين النموذج
+                document.getElementById('testForm').reset();
+                document.getElementById('locationInfo').style.display = 'none';
+                locationData = null;
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'إرسال البيانات';
+
+            } catch (error) {
+                showStatus('❌ حدث خطأ في الإرسال: ' + error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'إرسال البيانات';
+            }
+        });
+
+        // عرض رسالة الحالة
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status ' + type;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
