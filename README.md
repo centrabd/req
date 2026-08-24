@@ -1,53 +1,69 @@
-# req
+# 🧪 نظام إدارة طلبات التقسيط (Proof of Concept)
 
+نموذج عملي متكامل (Full-Stack) لربط واجهة ويب تفاعلية بـ Google Sheets كقاعدة بيانات، باستخدام Google Apps Script كـ Backend، واستضافة مجانية عبر GitHub Pages.
 
-# 🧪 نموذج اختبار Google Sheets Integration
+## 🌐 الروابط الحية (Live Demo)
+- **واجهة العميل (نموذج التسجيل):** [https://centrabd.github.io/req/](https://centrabd.github.io/req/)
+- **لوحة تحكم الإدارة:** [https://centrabd.github.io/req/admin.html](https://centrabd.github.io/req/admin.html)
+  - *كلمة المرور التجريبية:* `admin123`
 
-نموذج عملي لربط واجهة ويب بـ Google Sheets عبر Google Apps Script.
+---
 
-## 📋 وصف المشروع
+## ✨ الميزات الرئيسية
+1. **واجهة مستخدم متجاوبة:** تصميم حديث يعمل بسلاسة على الهواتف وأجهزة الكمبيوتر.
+2. **تحديد الموقع الجغرافي:** جلب إحداثيات العميل (خط العرض، خط الطول، والدقة) تلقائياً عبر Geolocation API.
+3. **لوحة تحكم ديناميكية:** عرض الطلبات في جدول تفاعلي مع إمكانية تغيير حالة الطلب (جديد، قيد المراجعة، مقبول، مرفوض).
+4. **نظام Backend ذكي (Self-Healing):** كود Google Apps Script يفحص هيكل جدول البيانات تلقائياً، ويضيف أي أعمدة مفقودة (مثل `UUID` أو `Status`) دون تدخل يدوي.
+5. **معالجة التزامن (Concurrency):** استخدام `LockService` لمنع تضارب البيانات عند إرسال طلبات متعددة في نفس اللحظة.
+6. **تجاوز قيود CORS:** استخدام حيلة `text/plain` لضمان استقبال الردود من Google Apps Script وعرض رسائل الخطأ أو النجاح بدقة.
 
-هذا المشروع يتكون من صفحتين:
-
-### 1. صفحة التسجيل (`index.html`)
-- نموذج بسيط لجمع البيانات (الاسم، رقم الهاتف، الموقع الجغرافي)
-- يستخدم Geolocation API لجلب الإحداثيات
-- يرسل البيانات مباشرة إلى Google Sheets
-
-### 2. لوحة تحكم الأدمن (`admin.html`)
-- عرض جميع الطلبات المسجلة
-- تغيير حالة كل طلب (جديد / قيد المراجعة / مقبول / مرفوض)
-- حماية بكلمة مرور بسيطة
+---
 
 ## 🛠️ التقنيات المستخدمة
+| المجال | التقنية |
+| :--- | :--- |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript (ES6+) |
+| **Backend** | Google Apps Script (GAS) |
+| **Database** | Google Sheets |
+| **Hosting** | GitHub Pages |
 
-- **Frontend:** HTML5, CSS3, JavaScript (Vanilla)
-- **Backend:** Google Apps Script
-- **Database:** Google Sheets
-- **Hosting:** GitHub Pages
-
-## 🚀 كيفية التشغيل
-
-1. افتح رابط الموقع: `https://your-username.github.io/req/`
-2. املأ النموذج واضغط "إرسال"
-3. افتح لوحة الأدمن: `https://your-username.github.io/req/admin.html`
-4. كلمة المرور: `admin123`
+---
 
 ## 📊 هيكل قاعدة البيانات (Google Sheets)
+يعتمد النظام على ورقة عمل باسم `Requests` تحتوي على الأعمدة التالية (يتم إنشاؤها تلقائياً إذا كانت مفقودة):
+`Timestamp` | `UUID` | `Name` | `Phone` | `Latitude` | `Longitude` | `Accuracy` | `Status`
 
-| Timestamp | UUID | Name | Phone | Latitude | Longitude | Accuracy | Status |
+---
 
-## 🔐 الأمان
+## ⚙️ كيفية الإعداد والتشغيل محلياً
+إذا أردت نسخ المشروع وتعديله:
 
-- كلمة مرور الأدمن: `admin123` (للعرض التوضيحي فقط)
-- مفتاح API: `MySecretAdminKey123` (في Google Apps Script)
+1. **استنساخ المستودع:**
+   ```bash
+   git clone https://github.com/centrabd/req.git
 
-## 📝 ملاحظات
 
-- هذا نموذج تعليمي (Proof of Concept)
-- لا يستخدم في إنتاج حقيقي بدون تحسينات أمنية إضافية
-- Google Sheets له قيود على عدد الطلبات اليومية (حوالي 20,000 طلب)
-
-## 👨‍💻 المطور
-
-تم التطوير كجزء من اختبار قدرات Google Sheets كقاعدة بيانات.
+إعداد Google Sheets:
+أنشئ جدولاً جديداً وسمِّ الورقة الأولى Requests.
+اذهب إلى الإضافات (Extensions) > برمجة تطبيقات Google (Apps Script).
+انسخ محتوى ملف Requests.gs من هذا المستودع والصقه في المحرر.
+قم بتحديث متغير SHEET_ID في الكود بمعرف الجدول الخاص بك.
+نشر الـ Backend:
+اضغط على نشر (Deploy) > نشر جديد (New deployment).
+اختر النوع: تطبيق ويب (Web app).
+اجعل الصلاحيات: أي شخص (Anyone).
+انسخ رابط الـ Web App وضعه في متغير SCRIPT_URL في ملفي index.html و admin.html.
+الرفع على GitHub Pages:
+ارفع الملفات إلى مستودع GitHub الخاص بك.
+فعّل GitHub Pages من إعدادات المستودع (Settings > Pages).
+⚠️ ملاحظات هامة حول الأمان والأداء
+هذا المشروع هو نموذج إثبات مفهوم (PoC) لأغراض تعليمية وعرض المهارات.
+مفاتيح التحقق (ADMIN_KEY) وكلمات المرور (ADMIN_PASSWORD) مدمجة في كود الواجهة الأمامية للتبسيط، ولا يُنصح باستخدام هذا النهج في البيئات الإنتاجية الحساسة.
+Google Sheets لديه حدود يومية للاستدعاءات (حوالي 20,000 طلب/يوم لحسابات Google العادية).
+🚀 التطويرات المستقبلية المخطط لها
+إضافة ميزة رفع الملفات (صور البطاقات وإثباتات الدفع) وتخزينها في Google Drive وحفظ الروابط في الشيت.
+تحويل النموذج إلى متعدد الخطوات (Multi-step Wizard) لطلب التقسيط الكامل.
+دمج إشعارات WhatsApp تلقائية عند تغيير حالة الطلب.
+👨‍💻 المطور: centrabd
+📅 آخر تحديث: 24/8/2026
+     
