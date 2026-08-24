@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم الأدمن - إدارة الطلبات</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        
+        /* شاشة تسجيل الدخول */
+        #loginScreen { text-align: center; padding: 50px; }
+        #loginScreen input { padding: 12px; width: 250px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; text-align: center; }
+        
+        /* جدول البيانات */
+        .table-container { overflow-x: auto; display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+        th, td { padding: 12px; text-align: right; border-bottom: 1px solid #ddd; }
+        th { background: #007bff; color: white; position: sticky; top: 0; }
+        tr:hover { background: #f9f9f9; }
+        
+        /* حالات الطلب */
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 12px; }
+        .status-جديد { background: #fff3cd; color: #856404; }
+        .status-مقبول { background: #d4edda; color: #155724; }
+        .status-مرفوض { background: #f8d7da; color: #721c24; }
+        .status-قيد-المراجعة { background: #cce5ff; color: #004085; }
+
+        select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
+        .btn { padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:disabled { background: #ccc; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #007bff; text-decoration: none; }
+        
+        .loading { text-align: center; padding: 20px; color: #666; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ لوحة تحكم إدارة الطلبات</h1>
+        
+        <!-- شاشة الدخول -->
+        <div id="loginScreen">
+            <h3>يرجى إدخال كلمة مرور المسؤول</h3>
+            <input type="password" id="adminPass" placeholder="كلمة المرور">
+            <br><br>
+            <button class="btn" onclick="checkLogin()">دخول</button>
+            <p id="loginError" style="color: red; display: none;">كلمة المرور غير صحيحة</p>
+        </div>
+
+        <!-- شاشة البيانات -->
+        <div id="dashboard" class="table-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>إجمالي الطلبات: <span id="totalCount">0</span></h3>
+                <button class="btn" onclick="fetchData()" style="background: #007bff;">🔄 تحديث البيانات</button>
+            </div>
+            
+            <div id="loading" class="loading">⏳ جاري تحميل البيانات من جوجل شيت...</div>
+            
+            <table id="requestsTable">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>رقم الطلب (UUID)</th>
+                        <th>الاسم</th>
+                        <th>الهاتف</th>
+                        <th>خط العرض</th>
+                        <th>خط الطول</th>
+                        <th>الحالة الحالية</th>
+                        <th>تغيير الحالة</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- سيتم ملء البيانات هنا بواسطة JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <a href="index.html" class="back-link">← العودة إلى نموذج التسجيل</a>
+    </div>
+
+    <script>
+        // نفس رابط الـ Web App
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWs7S_bU60So1Mmb2FjWagTwP1Klfpdf51DIrzQv0XHtE0ugTVv3eU4S-I6YDGVCW2vA/exec';
+        const ADMIN_KEY = 'MySecretAdminKey123'; // يجب أن يطابق الموجود في Apps Script
+        const ADMIN_PASSWORD = 'admin123'; // كلمة المرور البسيطة للواجهة
+
+        // التحقق من الدخول
+        function checkLogin() {
+            const pass = document.getElementById('adminPass').value;
+            if (pass === ADMIN_PASSWORD) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                sessionStorage.setItem('isAdmin', 'true');
+                fetchData();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        }
+
+        // جلب البيانات من جوجل شيت
+        async function fetchData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('tableBody').innerHTML = '';
+            
+            try {
+                // نرسل المفتاح السري في رابط الـ GET
+                const response = await fetch(`${SCRIPT_URL}?key=${ADMIN_KEY}`);
+                const result = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                if (result.status === 'success') {
+                    document.getElementById('totalCount').textContent = result.data.length;
+                    renderTable(result.data);
+                } else {
+                    alert('فشل جلب البيانات: ' + result.error);
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                alert('حدث خطأ في الاتصال: ' + error.message);
+            }
+        }
+
+        // رسم الجدول
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            // عكس الترتيب لعرض أحدث الطلبات أولاً
+            const reversedData = [...data].reverse(); 
+            
+            reversedData.forEach(row => {
+                const tr = document.createElement('tr');
+                
+                // تنظيف اسم الحالة لإزالة المسافات لاستخدامه في CSS class
+                const cleanStatus = (row.Status || 'جديد').toString().trim().replace(/\s+/g, '-');
+                
+                tr.innerHTML = `
+                    <td>${row.Timestamp || '-'}</td>
+                    <td style="font-family: monospace; font-size: 12px;">${row.UUID || '-'}</td>
+                    <td><strong>${row.Name || '-'}</strong></td>
+                    <td>${row.Phone || '-'}</td>
+                    <td>${row.Latitude || '-'}</td>
+                    <td>${row.Longitude || '-'}</td>
+                    <td><span class="status-badge status-${cleanStatus}">${row.Status || 'جديد'}</span></td>
+                    <td>
+                        <select id="status-${row.UUID}" style="margin-left: 5px;">
+                            <option value="جديد" ${row.Status === 'جديد' ? 'selected' : ''}>جديد</option>
+                            <option value="قيد المراجعة" ${row.Status === 'قيد المراجعة' ? 'selected' : ''}>قيد المراجعة</option>
+                            <option value="مقبول" ${row.Status === 'مقبول' ? 'selected' : ''}>مقبول</option>
+                            <option value="مرفوض" ${row.Status === 'مرفوض' ? 'selected' : ''}>مرفوض</option>
+                        </select>
+                        <button class="btn" onclick="updateStatus('${row.UUID}')" style="padding: 6px 10px; font-size: 12px;">حفظ</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // تحديث حالة طلب معين
+        async function updateStatus(uuid) {
+            const newStatus = document.getElementById(`status-${uuid}`).value;
+            const btn = event.target;
+            const originalText = btn.textContent;
+            
+            btn.disabled = true;
+            btn.textContent = '⏳';
+            
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'update_status',
+                        uuid: uuid,
+                        newStatus: newStatus
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('✅ تم تحديث الحالة بنجاح');
+                    fetchData(); // إعادة تحميل الجدول لتحديث الألوان
+                } else {
+                    alert('❌ فشل التحديث: ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ خطأ في الاتصال: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }
+
+        // التحقق من الجلسة عند تحميل الصفحة
+        if (sessionStorage.getItem('isAdmin') === 'true') {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            fetchData();
+        }
+    </script>
+</body>
+</html>
