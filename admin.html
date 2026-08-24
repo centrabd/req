@@ -5,39 +5,237 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة تحكم الأدمن - إدارة الطلبات</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f0f2f5; 
+            margin: 0; 
+            padding: 20px; 
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+        }
+        h1 { 
+            color: #333; 
+            text-align: center; 
+            margin-bottom: 30px; 
+        }
         
         /* شاشة تسجيل الدخول */
         #loginScreen { text-align: center; padding: 50px; }
-        #loginScreen input { padding: 12px; width: 250px; border: 2px solid #ddd; border-radius: 6px; font-size: 16px; text-align: center; }
+        #loginScreen input { 
+            padding: 12px; 
+            width: 250px; 
+            border: 2px solid #ddd; 
+            border-radius: 6px; 
+            font-size: 16px; 
+            text-align: center; 
+        }
+        
+        /* ========== شريط التحميل الاحترافي ========== */
+        .progress-container {
+            width: 100%;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .progress-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .progress-percentage {
+            font-size: 16px;
+            font-weight: bold;
+            color: #007bff;
+            min-width: 50px;
+            text-align: left;
+        }
+        
+        .progress-bar-wrapper {
+            width: 100%;
+            height: 25px;
+            background: #e9ecef;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #007bff 0%, #0056b3 50%, #007bff 100%);
+            background-size: 200% 100%;
+            border-radius: 15px;
+            transition: width 0.3s ease-in-out;
+            position: relative;
+            animation: shimmer 2s infinite linear;
+        }
+        
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.3) 50%,
+                rgba(255,255,255,0) 100%
+            );
+            animation: shine 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        @keyframes shine {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .progress-status {
+            margin-top: 8px;
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            font-style: italic;
+        }
+        
+        /* حالات مختلفة لشريط التقدم */
+        .progress-bar-fill.success {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        }
+        
+        .progress-bar-fill.error {
+            background: linear-gradient(90deg, #dc3545 0%, #c82333 100%);
+        }
+        /* ======================================== */
         
         /* جدول البيانات */
-        .table-container { overflow-x: auto; display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        th, td { padding: 12px; text-align: right; border-bottom: 1px solid #ddd; }
-        th { background: #007bff; color: white; position: sticky; top: 0; }
-        tr:hover { background: #f9f9f9; }
+        .table-container { 
+            overflow-x: auto; 
+            display: none; 
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px; 
+            font-size: 14px; 
+        }
+        th, td { 
+            padding: 12px; 
+            text-align: right; 
+            border-bottom: 1px solid #ddd; 
+        }
+        th { 
+            background: #007bff; 
+            color: white; 
+            position: sticky; 
+            top: 0; 
+        }
+        tr:hover { 
+            background: #f9f9f9; 
+        }
         
         /* حالات الطلب */
-        .status-badge { padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 12px; }
+        .status-badge { 
+            padding: 5px 10px; 
+            border-radius: 15px; 
+            font-weight: bold; 
+            font-size: 12px; 
+        }
         .status-جديد { background: #fff3cd; color: #856404; }
         .status-مقبول { background: #d4edda; color: #155724; }
         .status-مرفوض { background: #f8d7da; color: #721c24; }
         .status-قيد-المراجعة { background: #cce5ff; color: #004085; }
 
-        select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; }
-        .btn { padding: 8px 15px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .btn:disabled { background: #ccc; }
-        .back-link { display: block; text-align: center; margin-top: 20px; color: #007bff; text-decoration: none; }
+        select { 
+            padding: 6px; 
+            border-radius: 4px; 
+            border: 1px solid #ccc; 
+        }
+        .btn { 
+            padding: 8px 15px; 
+            background: #28a745; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .btn:disabled { 
+            background: #ccc; 
+            cursor: not-allowed;
+            transform: none;
+        }
+        .back-link { 
+            display: block; 
+            text-align: center; 
+            margin-top: 20px; 
+            color: #007bff; 
+            text-decoration: none; 
+        }
         
-        .loading { text-align: center; padding: 20px; color: #666; display: none; }
+        .loading-text { 
+            text-align: center; 
+            padding: 20px; 
+            color: #666; 
+            display: none; 
+        }
+        
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .stats-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stats-label {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .stats-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #007bff;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🛡️ لوحة تحكم إدارة الطلبات</h1>
+        <h1> 4 🛡️ لوحة تحكم إدارة الطلبات</h1>
         
         <!-- شاشة الدخول -->
         <div id="loginScreen">
@@ -50,12 +248,28 @@
 
         <!-- شاشة البيانات -->
         <div id="dashboard" class="table-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3>إجمالي الطلبات: <span id="totalCount">0</span></h3>
-                <button class="btn" onclick="fetchData()" style="background: #007bff;">🔄 تحديث البيانات</button>
+            <div class="stats-bar">
+                <div class="stats-item">
+                    <span class="stats-label">إجمالي الطلبات:</span>
+                    <span class="stats-value" id="totalCount">0</span>
+                </div>
+                <button class="btn" onclick="fetchData()" style="background: #007bff;">
+                    🔄 تحديث البيانات
+                </button>
             </div>
             
-            <div id="loading" class="loading">⏳ جاري تحميل البيانات من جوجل شيت...</div>
+            <!-- ========== شريط التحميل الاحترافي ========== -->
+            <div id="progressContainer" class="progress-container">
+                <div class="progress-header">
+                    <span class="progress-title">⏳ جاري تحميل البيانات...</span>
+                    <span class="progress-percentage" id="progressPercentage">0%</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar-fill" id="progressBarFill"></div>
+                </div>
+                <div class="progress-status" id="progressStatus">جاري الاتصال بالخادم...</div>
+            </div>
+            <!-- ======================================== -->
             
             <table id="requestsTable">
                 <thead>
@@ -70,9 +284,7 @@
                         <th>تغيير الحالة</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
-                    <!-- سيتم ملء البيانات هنا بواسطة JavaScript -->
-                </tbody>
+                <tbody id="tableBody"></tbody>
             </table>
         </div>
 
@@ -80,12 +292,48 @@
     </div>
 
     <script>
-        // نفس رابط الـ Web App
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1v5ObtvR2PXoRA3bf4PkdpylOB5M3YbG8RDzNfcMUqjtDWXBrNU1WKnozK2fk2SuMOQ/exec';
-        const ADMIN_KEY = 'MySecretAdminKey123'; // يجب أن يطابق الموجود في Apps Script
-        const ADMIN_PASSWORD = '123'; // كلمة المرور البسيطة للواجهة
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1v5ObtvR2PXoRA3bf4PkdpylOB5M3YbG8RDzNfcMUqjtDWXBrNU1WKnozK2fk2SuMOQ/exec';
+        const ADMIN_KEY = 'MySecretAdminKey123';
+        const ADMIN_PASSWORD = '123';
 
-        // التحقق من الدخول
+        // ========== دوال شريط التحميل ==========
+        function showProgress() {
+            document.getElementById('progressContainer').style.display = 'block';
+            updateProgress(0, 'جاري الاتصال بالخادم...');
+        }
+        
+        function updateProgress(percentage, statusText) {
+            const progressBar = document.getElementById('progressBarFill');
+            const percentageText = document.getElementById('progressPercentage');
+            const statusElement = document.getElementById('progressStatus');
+            
+            progressBar.style.width = percentage + '%';
+            percentageText.textContent = percentage + '%';
+            
+            if (statusText) {
+                statusElement.textContent = statusText;
+            }
+        }
+        
+        function hideProgress(success = true) {
+            const progressBar = document.getElementById('progressBarFill');
+            
+            if (success) {
+                progressBar.classList.add('success');
+                updateProgress(100, '✅ تم تحميل البيانات بنجاح!');
+            } else {
+                progressBar.classList.add('error');
+                updateProgress(100, '❌ حدث خطأ أثناء التحميل');
+            }
+            
+            setTimeout(() => {
+                document.getElementById('progressContainer').style.display = 'none';
+                progressBar.classList.remove('success', 'error');
+                progressBar.style.width = '0%';
+            }, 2000);
+        }
+        // ========================================
+
         function checkLogin() {
             const pass = document.getElementById('adminPass').value;
             if (pass === ADMIN_PASSWORD) {
@@ -98,44 +346,61 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1v5ObtvR2PXoRA3bf4
             }
         }
 
-        // جلب البيانات من جوجل شيت
         async function fetchData() {
-            document.getElementById('loading').style.display = 'block';
             document.getElementById('tableBody').innerHTML = '';
+            showProgress();
             
             try {
-                // نرسل المفتاح السري في رابط الـ GET
+                // محاكاة تقدم التحميل (لأن fetch لا يعطي تقدم حقيقي)
+                updateProgress(10, 'جاري إرسال الطلب...');
+                await sleep(300);
+                
+                updateProgress(30, 'جاري معالجة الطلب على الخادم...');
+                await sleep(300);
+                
                 const response = await fetch(`${SCRIPT_URL}?key=${ADMIN_KEY}`);
+                
+                updateProgress(60, 'جاري استقبال البيانات...');
+                await sleep(200);
+                
                 const result = await response.json();
                 
-                document.getElementById('loading').style.display = 'none';
+                updateProgress(80, 'جاري تحليل البيانات...');
+                await sleep(200);
                 
                 if (result.status === 'success') {
+                    updateProgress(90, 'جاري عرض البيانات في الجدول...');
+                    await sleep(200);
+                    
                     document.getElementById('totalCount').textContent = result.data.length;
                     renderTable(result.data);
+                    
+                    hideProgress(true);
                 } else {
-                    alert('فشل جلب البيانات: ' + result.error);
+                    hideProgress(false);
+                    alert('فشل جلب البيانات: ' + (result.error || 'خطأ غير معروف'));
                 }
             } catch (error) {
-                document.getElementById('loading').style.display = 'none';
+                hideProgress(false);
                 alert('حدث خطأ في الاتصال: ' + error.message);
             }
         }
+        
+        // دالة مساعدة للتأخير (محاكاة التقدم)
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
 
-        // رسم الجدول
         function renderTable(data) {
             const tbody = document.getElementById('tableBody');
-            // عكس الترتيب لعرض أحدث الطلبات أولاً
             const reversedData = [...data].reverse(); 
             
             reversedData.forEach(row => {
                 const tr = document.createElement('tr');
-                
-                // تنظيف اسم الحالة لإزالة المسافات لاستخدامه في CSS class
                 const cleanStatus = (row.Status || 'جديد').toString().trim().replace(/\s+/g, '-');
                 
                 tr.innerHTML = `
-                    <td>${row.Timestamp || '-'}</td>
+                    <td>${row.Timestamp ? new Date(row.Timestamp).toLocaleString('ar-EG') : '-'}</td>
                     <td style="font-family: monospace; font-size: 12px;">${row.UUID || '-'}</td>
                     <td><strong>${row.Name || '-'}</strong></td>
                     <td>${row.Phone || '-'}</td>
@@ -156,7 +421,6 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1v5ObtvR2PXoRA3bf4
             });
         }
 
-        // تحديث حالة طلب معين
         async function updateStatus(uuid) {
             const newStatus = document.getElementById(`status-${uuid}`).value;
             const btn = event.target;
@@ -179,7 +443,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1v5ObtvR2PXoRA3bf4
                 const result = await response.json();
                 if (result.status === 'success') {
                     alert('✅ تم تحديث الحالة بنجاح');
-                    fetchData(); // إعادة تحميل الجدول لتحديث الألوان
+                    fetchData();
                 } else {
                     alert('❌ فشل التحديث: ' + result.message);
                 }
@@ -191,14 +455,11 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx1v5ObtvR2PXoRA3bf4
             }
         }
 
-        // التحقق من الجلسة عند تحميل الصفحة
         if (sessionStorage.getItem('isAdmin') === 'true') {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             fetchData();
         }
     </script>
-
-    <a href="index.html" class="back-link">← العودة إلى نموذج التسجيل</a>
 </body>
 </html>
