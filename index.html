@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نموذج اختبار - Google Sheets PoC</title>
+    <title>نموذج اختبار - Google Sheets 2 </title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -22,6 +22,7 @@
             color: #333;
             text-align: center;
             margin-bottom: 30px;
+            font-size: 24px;
         }
         .form-group {
             margin-bottom: 20px;
@@ -54,6 +55,7 @@
             font-size: 18px;
             cursor: pointer;
             margin-top: 10px;
+            transition: background 0.3s;
         }
         button:hover {
             background: #0056b3;
@@ -68,6 +70,7 @@
             border-radius: 6px;
             text-align: center;
             display: none;
+            font-weight: bold;
         }
         .status.success {
             background: #d4edda;
@@ -81,11 +84,12 @@
         }
         .location-info {
             background: #e7f3ff;
-            padding: 10px;
+            padding: 15px;
             border-radius: 6px;
             margin-top: 10px;
             font-size: 14px;
             color: #004085;
+            line-height: 1.6;
         }
     </style>
 </head>
@@ -118,13 +122,13 @@
 
     <script>
         // ============================================
-        // ⚠️ مهم: ضع رابط الـ Web App هنا بعد إنشائه
+        // رابط تطبيق الويب الخاص بك (محدث)
         // ============================================
         const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWs7S_bU60So1Mmb2FjWagTwP1Klfpdf51DIrzQv0XHtE0ugTVv3eU4S-I6YDGVCW2vA/exec';
         
         let locationData = null;
 
-        // جلب الموقع الجغرافي
+        // دالة جلب الموقع الجغرافي
         function getLocation() {
             const locationInfo = document.getElementById('locationInfo');
             const getLocationBtn = document.getElementById('getLocationBtn');
@@ -147,26 +151,26 @@
                     
                     locationInfo.innerHTML = `
                         ✅ تم تحديد الموقع بنجاح<br>
-                        خط العرض: ${locationData.latitude.toFixed(6)}<br>
-                        خط الطول: ${locationData.longitude.toFixed(6)}<br>
-                        الدقة: ${locationData.accuracy.toFixed(2)} متر
+                        📍 خط العرض: ${locationData.latitude.toFixed(6)}<br>
+                        📍 خط الطول: ${locationData.longitude.toFixed(6)}<br>
+                        🎯 الدقة: ${locationData.accuracy.toFixed(2)} متر
                     `;
                     locationInfo.style.display = 'block';
                     
-                    getLocationBtn.textContent = '✅ تم تحديد الموقع';
+                    getLocationBtn.textContent = '✅ تم تحديد الموقع (يمكنك التغيير)';
                     document.getElementById('submitBtn').disabled = false;
                 },
                 (error) => {
                     let errorMsg = 'حدث خطأ في تحديد الموقع';
                     switch(error.code) {
                         case error.PERMISSION_DENIED:
-                            errorMsg = '❌ رفضت إذن تحديد الموقع';
+                            errorMsg = '❌ تم رفض إذن تحديد الموقع. يرجى السماح للمتصفح بالوصول للموقع.';
                             break;
                         case error.POSITION_UNAVAILABLE:
-                            errorMsg = '❌ معلومات الموقع غير متاحة';
+                            errorMsg = '❌ معلومات الموقع غير متاحة حالياً.';
                             break;
                         case error.TIMEOUT:
-                            errorMsg = '❌ انتهت مهلة الطلب';
+                            errorMsg = '❌ انتهت مهلة طلب تحديد الموقع.';
                             break;
                     }
                     showStatus(errorMsg, 'error');
@@ -176,61 +180,71 @@
             );
         }
 
-        // إرسال البيانات إلى Google Sheets
+        // دالة إرسال البيانات إلى Google Sheets
         document.getElementById('testForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
-            submitBtn.textContent = '⏳ جاري الإرسال...';
+            submitBtn.textContent = '⏳ جاري الإرسال والحفظ...';
 
             const data = {
                 name: document.getElementById('name').value,
                 phone: document.getElementById('phone').value,
-                latitude: locationData.latitude,
-                longitude: locationData.longitude,
-                accuracy: locationData.accuracy,
+                latitude: locationData ? locationData.latitude : '',
+                longitude: locationData ? locationData.longitude : '',
+                accuracy: locationData ? locationData.accuracy : '',
                 timestamp: new Date().toISOString()
             };
 
             try {
+                // الحيلة السحرية: استخدام text/plain يتجاوز فحص CORS المسبق ويسمح لنا بقراءة الرد
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // مهم لتجاوز مشكلة CORS
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain;charset=utf-8',
                     },
                     body: JSON.stringify(data)
                 });
 
-                // مع mode: 'no-cors' لن نتمكن من قراءة الـ response
-                // لكن إذا وصلنا لهنا فالطلب نجح
-                showStatus('✅ تم إرسال البيانات بنجاح! تحقق من Google Sheets', 'success');
-                
-                // إعادة تعيين النموذج
-                document.getElementById('testForm').reset();
-                document.getElementById('locationInfo').style.display = 'none';
-                locationData = null;
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'إرسال البيانات';
+                // محاولة قراءة الرد الفعلي من جوجل شيت
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    showStatus('✅ تم إرسال البيانات بنجاح! (معرف الطلب: ' + result.uuid + ')', 'success');
+                    
+                    // إعادة تعيين النموذج
+                    document.getElementById('testForm').reset();
+                    document.getElementById('locationInfo').style.display = 'none';
+                    locationData = null;
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'إرسال البيانات';
+                } else {
+                    // هنا سيظهر الخطأ الحقيقي إذا فشل الحفظ في الشيت
+                    showStatus('❌ فشل الحفظ في جوجل شيت: ' + result.message, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'إرسال البيانات';
+                }
 
             } catch (error) {
-                showStatus('❌ حدث خطأ في الإرسال: ' + error.message, 'error');
+                // هذا الخطأ يظهر إذا كان هناك مشكلة في الشبكة أو خطأ في كود Apps Script يمنع إرجاع JSON
+                showStatus('❌ خطأ في الاتصال أو في الكود: ' + error.message, 'error');
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'إرسال البيانات';
             }
         });
 
-        // عرض رسالة الحالة
+        // دالة عرض رسالة الحالة
         function showStatus(message, type) {
             const statusDiv = document.getElementById('statusMessage');
             statusDiv.textContent = message;
             statusDiv.className = 'status ' + type;
             statusDiv.style.display = 'block';
             
+            // إخفاء الرسالة تلقائياً بعد 6 ثواني
             setTimeout(() => {
                 statusDiv.style.display = 'none';
-            }, 5000);
+            }, 6000);
         }
     </script>
 </body>
